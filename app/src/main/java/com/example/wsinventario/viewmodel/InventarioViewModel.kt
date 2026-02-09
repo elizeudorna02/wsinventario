@@ -1,17 +1,14 @@
-
 package com.example.wsinventario.viewmodel
 
 import android.app.Application
 import android.net.Uri
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.wsinventario.data.ContagemItem
 import com.example.wsinventario.data.Produto
 import com.example.wsinventario.data.ProdutoRepository
 import com.example.wsinventario.data.file.FileHandler
@@ -31,10 +28,8 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
 
     var searchText by mutableStateOf("")
     var productCatalogList by mutableStateOf<List<Produto>>(emptyList())
-    var contagemList by mutableStateOf<List<ContagemItem>>(emptyList())
-    var contagemProductsCount by mutableIntStateOf(0)
-    var contagemTotalQuantity by mutableIntStateOf(0)
-    var selectedTabIndex by mutableIntStateOf(0)
+    var contagemList by mutableStateOf<List<Produto>>(emptyList())
+    var selectedTabIndex by mutableStateOf(0)
     var showProductOptions by mutableStateOf(false)
     var selectedProduct by mutableStateOf<Produto?>(null)
 
@@ -49,13 +44,16 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onTabSelected(index: Int) {
         selectedTabIndex = index
+        if (index == 1) { // Quando for para a aba de produtos, força a busca
+            onSearchTextChanged(searchText)
+        }
     }
 
     fun onSearchTextChanged(text: String) {
         searchText = text
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            delay(300L)
+            delay(300L) // Debounce para evitar buscas a cada tecla digitada
             productCatalogList = withContext(Dispatchers.IO) {
                 repository.findProdutos(text)
             }
@@ -64,10 +62,8 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
 
     fun refreshData() {
         viewModelScope.launch {
-            contagemProductsCount = withContext(Dispatchers.IO) { repository.getContagemProductsCount() }
-            contagemTotalQuantity = withContext(Dispatchers.IO) { repository.getContagemTotalQuantity() }
             contagemList = withContext(Dispatchers.IO) { repository.getAllContagens() }
-            productCatalogList = withContext(Dispatchers.IO) { repository.findProdutos(searchText) }
+            onSearchTextChanged(searchText)
         }
     }
 
@@ -86,62 +82,56 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
         selectedProduct = null
     }
 
-    // --- Lógica de Importação/Exportação ---
-
     fun onExportClicked() {
         viewModelScope.launch {
-            val delimitador = withContext(Dispatchers.IO) {
-                repository.getParametro(SettingsViewModel.KEY_EXPORT_DELIMITADOR, ";")
-            }
             val itemsToExport = withContext(Dispatchers.IO) { repository.getAllContagens() }
             if (itemsToExport.isEmpty()) {
                 _uiEvents.emit(UiEvent.ShowToast("Nenhuma contagem para exportar."))
                 return@launch
             }
-            val csvContent = fileHandler.createContagemExportContent(itemsToExport, delimitador)
+            val csvContent = fileHandler.createExportContent(itemsToExport)
             _uiEvents.emit(UiEvent.SaveFile(csvContent, "contagem.csv"))
         }
     }
 
     fun onImportFileSelected(uri: Uri) {
         viewModelScope.launch {
-            val delimitador = withContext(Dispatchers.IO) { repository.getParametro(SettingsViewModel.KEY_IMPORT_DELIMITADOR, ";") }
-            val fieldCount = withContext(Dispatchers.IO) { repository.getParametro(SettingsViewModel.KEY_IMPORT_FIELD_COUNT, "3").toIntOrNull() ?: 3 }
-
+            val delimitador = withContext(Dispatchers.IO) {
+                repository.getParametro(SettingsViewModel.KEY_IMPORT_DELIMITADOR, ";")
+            }
             try {
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { inputStream ->
-                    val result = fileHandler.readProductsFromStream(inputStream, delimitador, fieldCount)
-                    result.onSuccess { produtos ->
-                        if (produtos.isNotEmpty()) {
-                            val produtosParaSalvar = if (fieldCount == 2) {
-                                val produtosCompletos = mutableListOf<Produto>()
-                                withContext(Dispatchers.IO) {
-                                    for (item in produtos) {
-                                        val produtoDoCatalogo = repository.findProdutoByExactCodigo(item.codigoDeBarras)
-                                        produtosCompletos.add(
-                                            item.copy(nome = produtoDoCatalogo?.nome ?: "NOME NÃO ENCONTRADO")
-                                        )
-                                    }
-                                }
-                                produtosCompletos
-                            } else {
-                                produtos
-                            }
-                            withContext(Dispatchers.IO) { repository.replaceAllProdutos(produtosParaSalvar) }
-                            _uiEvents.emit(UiEvent.ShowToast("${produtosParaSalvar.size} produtos importados com sucesso!"))
-                            refreshData()
-                        } else {
-                            _uiEvents.emit(UiEvent.ShowToast("Nenhum produto válido encontrado no arquivo."))
-                        }
+                    val result = repository.importarCatalogoDeArquivo(inputStream, delimitador)
+                    result.onSuccess {
+                        _uiEvents.emit(UiEvent.ShowToast("$it produtos importados com sucesso!"))
+                        refreshData()
                     }
                     result.onFailure {
-                         _uiEvents.emit(UiEvent.ShowToast("Erro ao ler o arquivo."))
+                         _uiEvents.emit(UiEvent.ShowToast("Erro ao ler o arquivo: ${it.message}"))
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 _uiEvents.emit(UiEvent.ShowToast("Falha ao abrir o arquivo."))
             }
+        }
+    }
+
+    fun importarProdutosDaApi() {
+        viewModelScope.launch {
+            _uiEvents.emit(UiEvent.ShowToast("Iniciando importação da API..."))
+            val result = withContext(Dispatchers.IO) {
+                repository.importarCatalogoDaApi()
+            }
+            result.fold(
+                onSuccess = {
+                    _uiEvents.emit(UiEvent.ShowToast("$it produtos importados com sucesso!"))
+                    refreshData()
+                },
+                onFailure = {
+                    _uiEvents.emit(UiEvent.ShowToast("Falha ao importar: ${it.message}"))
+                }
+            )
         }
     }
 

@@ -1,57 +1,79 @@
-
 package com.example.wsinventario.data
 
 import android.content.Context
+import com.example.wsinventario.data.file.FileHandler
+import com.example.wsinventario.settings.ApiSettingsViewModel
+import java.io.InputStream
 
-/**
- * Repositório que abstrai o acesso aos dados, servindo como uma ponte
- * entre os ViewModels e as fontes de dados (neste caso, o DatabaseHelper).
- */
 class ProdutoRepository(context: Context) {
 
     private val dbHelper = DatabaseHelper(context.applicationContext)
+    private var apiService: ApiService
+    private val fileHandler = FileHandler()
 
-    // --- Funções da Tabela de Contagem ---
-
-    fun getAllContagens(): List<ContagemItem> {
-        return dbHelper.getAllContagens()
+    init {
+        apiService = createApiServiceFromSettings()
     }
 
-    fun getContagemProductsCount(): Int {
-        return dbHelper.getContagemProductsCount()
+    private fun createApiServiceFromSettings(): ApiService {
+        val apiUrl = dbHelper.getParametro(ApiSettingsViewModel.KEY_API_URL, "http://127.0.0.1:5000/api/produtos")
+        return ApiService(apiUrl)
     }
 
-    fun getContagemTotalQuantity(): Int {
-        return dbHelper.getContagemTotalQuantity()
+    // --- Funções de Catálogo (produtos) ---
+
+    suspend fun importarCatalogoDaApi(): Result<Int> {
+        apiService = createApiServiceFromSettings() // Garante que usa as configurações mais recentes
+        val result = apiService.getProdutos()
+        return result.fold(
+            onSuccess = { produtosDaApi ->
+                dbHelper.replaceAllProdutos(produtosDaApi)
+                Result.success(produtosDaApi.size)
+            },
+            onFailure = { 
+                it.printStackTrace()
+                Result.failure(it)
+            }
+        )
     }
 
-    fun addOrUpdateContagem(codigoDeBarras: String, nome: String, quantidade: Int): Long {
-        return dbHelper.addOrUpdateContagem(codigoDeBarras, nome, quantidade)
+    fun importarCatalogoDeArquivo(inputStream: InputStream, delimitador: String): Result<Int> {
+        val result = fileHandler.readProductsFromStream(inputStream, delimitador)
+        return result.fold(
+            onSuccess = { produtosDoArquivo ->
+                dbHelper.replaceAllProdutos(produtosDoArquivo)
+                Result.success(produtosDoArquivo.size)
+            },
+            onFailure = { 
+                it.printStackTrace()
+                Result.failure(it)
+            }
+        )
     }
 
-    // --- Funções da Tabela de Produtos (Catálogo Mestre) ---
+    fun findProdutoByEan(ean: String): Produto? {
+        return dbHelper.findProdutoByEan(ean)
+    }
 
     fun findProdutos(query: String): List<Produto> {
         return dbHelper.findProdutos(query)
     }
-    
-    fun findProdutoByExactCodigo(codigoDeBarras: String): Produto? {
-        return dbHelper.findProdutoByExactCodigo(codigoDeBarras)
+
+    fun createProduto(produto: Produto): Long {
+        return dbHelper.createProduto(produto)
     }
 
-    fun createProduto(codigoDeBarras: String, nome: String): Long {
-        return dbHelper.createProduto(codigoDeBarras, nome)
+    // --- Funções de Contagem ---
+
+    fun addOrUpdateContagem(produto: Produto): Long {
+        return dbHelper.addOrUpdateContagem(produto)
     }
 
-    fun updateProduct(id: Long, nome: String, codigoDeBarras: String): Int {
-        return dbHelper.updateProduct(id, nome, codigoDeBarras)
+    fun getAllContagens(): List<Produto> {
+        return dbHelper.getAllContagens()
     }
 
-    fun replaceAllProdutos(produtos: List<Produto>) {
-        dbHelper.replaceAllProdutos(produtos)
-    }
-
-    // --- Funções da Tabela de Parâmetros ---
+    // --- Funções de Parâmetros ---
 
     fun getParametro(key: String, defaultValue: String): String {
         return dbHelper.getParametro(key, defaultValue)

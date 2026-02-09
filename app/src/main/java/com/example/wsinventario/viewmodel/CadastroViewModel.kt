@@ -1,4 +1,3 @@
-
 package com.example.wsinventario.viewmodel
 
 import android.app.Application
@@ -9,7 +8,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.wsinventario.data.ContagemItem
 import com.example.wsinventario.data.Produto
 import com.example.wsinventario.data.ProdutoRepository
 import kotlinx.coroutines.Dispatchers
@@ -24,170 +22,129 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
 
     private val repository = ProdutoRepository(application)
 
-    var id by mutableStateOf<Long?>(null)
-    var codigoDeBarras by mutableStateOf("")
-    var nome by mutableStateOf("")
-    var quantidade by mutableStateOf("1")
+    // State for the form
+    var eanInput by mutableStateOf("")
+    var nomeInput by mutableStateOf("")
+    var quantidadeInput by mutableStateOf("1.0")
+    var codigoInput by mutableStateOf("")
+    var produtoOriginal by mutableStateOf<Produto?>(null)
+
+    private var searchJob: Job? = null
 
     private val _uiEvents = MutableSharedFlow<UiEvent>()
     val uiEvents = _uiEvents.asSharedFlow()
 
-    private var searchJob: Job? = null
-
-    fun onCodigoDeBarrasChanged(text: String) {
-        if (text.all { it.isDigit() }) {
-            codigoDeBarras = text
-            searchJob?.cancel()
-            searchJob = viewModelScope.launch {
-                delay(500L)
-                if (text.isNotBlank()) {
-                    val product = withContext(Dispatchers.IO) {
-                        repository.findProdutoByExactCodigo(text)
-                    }
-                    if (product != null) {
-                        nome = product.nome
-                    } else {
-                        if (text == codigoDeBarras) {
-                             _uiEvents.emit(UiEvent.ShowToast("Produto não cadastrado"))
-                        }
-                    }
+    fun onEanChanged(text: String) {
+        eanInput = text
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(300L) // Debounce
+            if (text.isNotBlank()) {
+                val productFromRepo = withContext(Dispatchers.IO) {
+                    repository.findProdutoByEan(text)
                 }
+                produtoOriginal = productFromRepo
+                nomeInput = productFromRepo?.nome ?: ""
+                codigoInput = productFromRepo?.codigo?.toString() ?: ""
             }
         }
     }
 
     fun onNomeChanged(text: String) {
-        nome = text
+        nomeInput = text
+    }
+
+    fun onCodigoChanged(text: String) {
+        codigoInput = text
     }
 
     fun onQuantidadeChanged(text: String) {
-        if (text.isEmpty() || text.all { it.isDigit() }) {
-            quantidade = text
+        if (text.isEmpty() || text.matches(Regex("^\\d*\\.?\\d*$"))) {
+            quantidadeInput = text
         }
     }
 
     fun incrementQuantidade() {
-        val currentQuant = quantidade.toIntOrNull() ?: 0
-        quantidade = (currentQuant + 1).toString()
+        val currentQuant = quantidadeInput.toDoubleOrNull() ?: 0.0
+        quantidadeInput = (currentQuant + 1).toString()
     }
 
     fun decrementQuantidade() {
-        val currentQuant = quantidade.toIntOrNull() ?: 1
-        if (currentQuant > 1) {
-            quantidade = (currentQuant - 1).toString()
+        val currentQuant = quantidadeInput.toDoubleOrNull() ?: 1.0
+        if (currentQuant > 0) {
+            quantidadeInput = (currentQuant - 1).toString()
         }
     }
 
     fun clearForm() {
-        id = null
-        codigoDeBarras = ""
-        nome = ""
-        quantidade = "1"
+        produtoOriginal = null
+        eanInput = ""
+        nomeInput = ""
+        quantidadeInput = "1.0"
+        codigoInput = ""
     }
 
-    fun loadProduct(product: Produto) {
-        id = product.id
-        nome = product.nome
-        codigoDeBarras = product.codigoDeBarras
-        quantidade = "1"
-    }
-
-    fun loadContagemItem(item: ContagemItem) {
-        id = item.id
-        nome = item.nome
-        codigoDeBarras = item.codigoDeBarras
-        quantidade = item.quantidade.toString()
+    fun loadProdutoParaContagem(produto: Produto) {
+        produtoOriginal = produto
+        eanInput = produto.ean
+        nomeInput = produto.nome
+        quantidadeInput = produto.qtd.toString()
+        codigoInput = produto.codigo.toString()
     }
 
     fun onSaveContagemClicked(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        val quant = quantidade.toIntOrNull()
-        if (codigoDeBarras.isBlank()) {
-            onFailure("O código de barras é obrigatório.")
+        val quant = quantidadeInput.toDoubleOrNull()
+        if (eanInput.isBlank()) {
+            onFailure("O código EAN é obrigatório.")
             return
         }
-        if (quant == null || quant <= 0) {
-            onFailure("A quantidade deve ser maior que zero.")
-            return
-        }
-
-        viewModelScope.launch {
-            val product = withContext(Dispatchers.IO) {
-                repository.findProdutoByExactCodigo(codigoDeBarras)
-            }
-
-            if (product != null) {
-                withContext(Dispatchers.IO) { repository.addOrUpdateContagem(codigoDeBarras, product.nome, quant) }
-                onSuccess()
-            } else {
-                if (nome.isBlank()) {
-                    onFailure("Produto não cadastrado. Preencha o nome para criá-lo.")
-                    return@launch
-                }
-                _uiEvents.emit(UiEvent.ShowConfirmationDialog)
-            }
-        }
-    }
-
-    fun confirmAndCreateProduct(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        val quant = quantidade.toIntOrNull()
-        if (nome.isBlank() || codigoDeBarras.isBlank() || quant == null || quant <= 0) {
-            onFailure("Ocorreu um erro. Verifique os campos e tente novamente.")
+        if (quant == null || quant < 0) {
+            onFailure("A quantidade não pode ser negativa.")
             return
         }
 
         viewModelScope.launch {
+            val codigoInt = codigoInput.toIntOrNull() ?: produtoOriginal?.codigo ?: 0
+            val produtoParaSalvar = produtoOriginal?.copy(qtd = quant, codigo = codigoInt, nome = nomeInput) 
+                ?: Produto(codigo = codigoInt, ean = eanInput, nome = nomeInput.takeIf { it.isNotBlank() } ?: "PRODUTO SEM NOME", qtd = quant)
+
             withContext(Dispatchers.IO) {
-                repository.createProduto(codigoDeBarras, nome)
-                repository.addOrUpdateContagem(codigoDeBarras, nome, quant)
+                repository.addOrUpdateContagem(produtoParaSalvar)
             }
             onSuccess()
         }
     }
 
     fun createProdutoNoCatalogo(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        if (nome.isBlank() || codigoDeBarras.isBlank()) {
-            onFailure("Nome e código de barras são obrigatórios.")
+        if (eanInput.isBlank() || nomeInput.isBlank() || codigoInput.isBlank()) {
+            onFailure("Código, EAN e Nome são obrigatórios.")
             return
         }
 
         viewModelScope.launch {
             val existingProduct = withContext(Dispatchers.IO) {
-                repository.findProdutoByExactCodigo(codigoDeBarras)
+                repository.findProdutoByEan(eanInput)
             }
             if (existingProduct != null) {
-                onFailure("Um produto com este código de barras já existe no catálogo.")
+                onFailure("Um produto com este EAN já existe no catálogo.")
                 return@launch
             }
-            
-            withContext(Dispatchers.IO) {
-                repository.createProduto(codigoDeBarras, nome)
+
+            val newProduto = Produto(codigo = codigoInput.toIntOrNull() ?: 0, ean = eanInput, nome = nomeInput, qtd = 0.0) // qtd inicial é 0 no catálogo
+            val result = withContext(Dispatchers.IO) {
+                repository.createProduto(newProduto)
             }
-            onSuccess()
+
+            if (result > -1) {
+                onSuccess()
+            } else {
+                onFailure("Erro ao criar o produto.")
+            }
         }
     }
-
-    fun updateProduct(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        val currentId = id
-        if (currentId == null) {
-            onFailure("ID do produto não encontrado.")
-            return
-        }
-        if (nome.isBlank() || codigoDeBarras.isBlank()) {
-            onFailure("Nome e código de barras são obrigatórios.")
-            return
-        }
-
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                repository.updateProduct(currentId, nome, codigoDeBarras)
-            }
-            onSuccess()
-        }
-    }
-
+    
     sealed class UiEvent {
         data class ShowToast(val message: String) : UiEvent()
-        data object ShowConfirmationDialog : UiEvent()
     }
 }
 

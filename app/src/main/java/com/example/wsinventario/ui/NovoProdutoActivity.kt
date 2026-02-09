@@ -1,4 +1,3 @@
-
 package com.example.wsinventario.ui
 
 import android.app.Activity
@@ -11,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,9 +19,6 @@ import com.example.wsinventario.viewmodel.CadastroViewModel
 import com.example.wsinventario.viewmodel.CadastroViewModelFactory
 import com.example.wsinventario.ui.theme.WsinventarioTheme
 
-/**
- * Activity para cadastrar um NOVO produto no catálogo mestre.
- */
 class NovoProdutoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +37,6 @@ fun NovoProdutoScreen(viewModel: CadastroViewModel) {
     val context = LocalContext.current
     val activity = (context as? Activity)
 
-    // Limpa o formulário na primeira vez que a tela é exibida
     DisposableEffect(Unit) {
         viewModel.clearForm()
         onDispose { }
@@ -50,35 +44,38 @@ fun NovoProdutoScreen(viewModel: CadastroViewModel) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Novo Produto") })
+            TopAppBar(title = { Text("Novo Produto no Catálogo") })
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Campo para o nome do produto
             OutlinedTextField(
-                value = viewModel.nome,
-                onValueChange = viewModel::onNomeChanged,
-                label = { Text("NOME PRODUTO") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            // Campo para o código de barras
-            OutlinedTextField(
-                value = viewModel.codigoDeBarras,
-                onValueChange = viewModel::onCodigoDeBarrasChanged,
-                label = { Text("CÓDIGO BARRAS") },
+                value = viewModel.codigoInput,
+                onValueChange = viewModel::onCodigoChanged,
+                label = { Text("CÓDIGO") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
+            OutlinedTextField(
+                value = viewModel.eanInput,
+                onValueChange = viewModel::onEanChanged,
+                label = { Text("EAN (Código de Barras)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = viewModel.nomeInput,
+                onValueChange = viewModel::onNomeChanged,
+                label = { Text("NOME") },
+                modifier = Modifier.fillMaxWidth()
+            )
             
-            // Spacer para empurrar os botões para baixo
             Spacer(modifier = Modifier.weight(1f))
 
-            // Botões de Ação
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End

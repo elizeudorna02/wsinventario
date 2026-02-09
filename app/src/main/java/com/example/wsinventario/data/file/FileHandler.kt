@@ -1,68 +1,61 @@
 package com.example.wsinventario.data.file
 
-import com.example.wsinventario.data.ContagemItem
 import com.example.wsinventario.data.Produto
 import java.io.InputStream
 import java.io.OutputStream
 
-/**
- * Classe especialista em manipular arquivos de importação/exportação.
- */
 class FileHandler {
 
     /**
-     * Cria o conteúdo de texto para exportar a CONTAGEM ATUAL.
-     * @param items A lista de itens da contagem.
-     * @param delimitador O caractere a ser usado para separar os campos.
+     * Cria o conteúdo de texto para exportar uma lista de produtos no formato padrão.
      */
-    fun createContagemExportContent(items: List<ContagemItem>, delimitador: String): String {
-        val header = "codigo_de_barras${delimitador}nome_produto${delimitador}quantidade_contada\n"
+    fun createExportContent(items: List<Produto>): String {
+        val header = "CODIGO;EAN;NOME;QTD\n"
         val rows = items.joinToString(separator = "\n") { item ->
-            "${item.codigoDeBarras}$delimitador${item.nome}$delimitador${item.quantidade}"
+            "${item.codigo};${item.ean};${item.nome};${item.qtd}"
         }
         return header + rows
     }
 
     /**
-     * Lê um arquivo de importação e o converte em uma lista de produtos.
-     * @param inputStream O fluxo de dados do arquivo selecionado.
-     * @param delimitador O caractere que separa os campos no arquivo.
-     * @param fieldCount O número de colunas esperado no arquivo (2 ou 3).
-     * @return Uma lista de produtos lidos do arquivo.
+     * Lê um arquivo de importação de catálogo (com 2, 3 ou 4 colunas) 
+     * e o converte em uma lista de produtos no formato padrão.
      */
-    fun readProductsFromStream(inputStream: InputStream, delimitador: String, fieldCount: Int): Result<List<Produto>> {
+    fun readProductsFromStream(inputStream: InputStream, delimitador: String): Result<List<Produto>> {
         return try {
             val productList = mutableListOf<Produto>()
             inputStream.bufferedReader().useLines { lines ->
-                lines.forEach { line ->
+                lines.drop(1).forEach { line -> // Pula o cabeçalho
                     val tokens = line.split(delimitador)
-                    
-                    // Lógica para 3 colunas: codigo;nome;quantidade
-                    if (fieldCount == 3 && tokens.size >= 3) {
-                        val quantidade = tokens[2].trim().toIntOrNull()
-                        if (quantidade != null) { // Ignora o cabeçalho
-                            val product = Produto(
-                                id = 0,
-                                codigoDeBarras = tokens[0].trim(),
+                    var produto: Produto? = null
+
+                    when (tokens.size) {
+                        2 -> { // EAN;QTD
+                            produto = Produto(
+                                codigo = 0, // Sem código no arquivo
+                                ean = tokens[0].trim(),
+                                nome = "", // Sem nome no arquivo
+                                qtd = tokens[1].trim().toDoubleOrNull() ?: 0.0
+                            )
+                        }
+                        3 -> { // EAN;NOME;QTD
+                            produto = Produto(
+                                codigo = 0, // Sem código no arquivo
+                                ean = tokens[0].trim(),
                                 nome = tokens[1].trim(),
-                                quantidade = quantidade
+                                qtd = tokens[2].trim().toDoubleOrNull() ?: 0.0
                             )
-                            productList.add(product)
+                        }
+                        4 -> { // CODIGO;EAN;NOME;QTD
+                             produto = Produto(
+                                codigo = tokens[0].trim().toIntOrNull() ?: 0,
+                                ean = tokens[1].trim(),
+                                nome = tokens[2].trim(),
+                                qtd = tokens[3].trim().toDoubleOrNull() ?: 0.0
+                            )
                         }
                     }
-                    // Lógica para 2 colunas: codigo;quantidade
-                    else if (fieldCount == 2 && tokens.size >= 2) {
-                        val quantidade = tokens[1].trim().toIntOrNull()
-                        if (quantidade != null) { // Ignora o cabeçalho
-                            val product = Produto(
-                                id = 0,
-                                codigoDeBarras = tokens[0].trim(),
-                                nome = "", // Nome será buscado no catálogo depois
-                                quantidade = quantidade
-                            )
-                            productList.add(product)
-                        }
-                    }
+                    produto?.let { productList.add(it) }
                 }
             }
             Result.success(productList)

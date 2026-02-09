@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-
+                
                 val cameraPermissionLauncher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission()
                 ) { isGranted: Boolean ->
@@ -181,7 +181,7 @@ class MainActivity : ComponentActivity() {
                         showCadastroSheet = true
                     },
                     onScanClick = {
-                        when (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)) {
+                         when (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)) {
                             PackageManager.PERMISSION_GRANTED -> {
                                 scannerLauncher.launch(Intent(context, ScannerActivity::class.java))
                             }
@@ -334,7 +334,7 @@ fun InventarioScreen(
 
             PrimaryTabRow(selectedTabIndex = viewModel.selectedTabIndex) {
                 Tab(selected = viewModel.selectedTabIndex == 0, onClick = { viewModel.onTabSelected(0) }, text = { Text("CONTAGEM") })
-                Tab(selected = viewModel.selectedTabIndex == 1, onClick = { viewModel.onTabSelected(1) }, text = { Text("CATÁLOGO") })
+                Tab(selected = viewModel.selectedTabIndex == 1, onClick = { viewModel.onTabSelected(1) }, text = { Text("PRODUTOS") })
             }
 
             val contagemProductsCount = viewModel.contagemList.distinctBy { it.ean }.size
@@ -377,6 +377,7 @@ fun ContagensTab(
                     Row(
                         modifier = Modifier.fillMaxWidth().clickable { onContagemClick(produto) }.padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
+                        Text(text = "${produto.codigo}", modifier = Modifier.weight(0.5f))
                         Text(text = produto.ean, modifier = Modifier.weight(1f))
                         Text(text = produto.nome, modifier = Modifier.weight(1f))
                         Text(text = String.format("%.2f", produto.qtd), modifier = Modifier.weight(0.5f), textAlign = TextAlign.End)
@@ -403,6 +404,7 @@ fun ProdutosTab(
                 Row(
                     modifier = Modifier.padding(8.dp).clickable { onProductClick(product) }
                 ) {
+                    Text(text = "${product.codigo}", modifier = Modifier.weight(0.5f))
                     Text(text = product.ean, modifier = Modifier.weight(1f))
                     Text(text = product.nome, modifier = Modifier.weight(1f))
                     Text(text = String.format("%.2f", product.qtd), modifier = Modifier.weight(0.5f), textAlign = TextAlign.End)
@@ -434,7 +436,7 @@ fun CadastroSheetContent(
 
         OutlinedTextField(
             value = viewModel.codigoInput,
-            onValueChange = viewModel::onCodigoChanged,
+            onValueChange = {},
             label = { Text("CÓDIGO") },
             modifier = Modifier.fillMaxWidth(),
             enabled = false
@@ -451,13 +453,13 @@ fun CadastroSheetContent(
         OutlinedTextField(
             value = viewModel.nomeInput,
             onValueChange = viewModel::onNomeChanged,
-            label = { Text("Nome do Produto") },
+            label = { Text("NOME") },
             modifier = Modifier.fillMaxWidth(),
             enabled = viewModel.produtoOriginal == null
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text("Quantidade Contada", style = MaterialTheme.typography.labelMedium)
+        Text("QUANTIDADE", style = MaterialTheme.typography.labelMedium)
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = { viewModel.decrementQuantidade() }, modifier = Modifier.padding(end = 8.dp).size(56.dp)) {
                 Icon(Icons.Default.Remove, contentDescription = "Decrementar")

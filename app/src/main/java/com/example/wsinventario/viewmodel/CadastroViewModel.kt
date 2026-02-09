@@ -105,7 +105,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
 
         viewModelScope.launch {
             val codigoInt = codigoInput.toIntOrNull() ?: produtoOriginal?.codigo ?: 0
-            val produtoParaSalvar = produtoOriginal?.copy(qtd = quant, codigo = codigoInt, nome = nomeInput) 
+            val produtoParaSalvar = produtoOriginal?.copy(qtd = quant, codigo = codigoInt, nome = nomeInput)
                 ?: Produto(codigo = codigoInt, ean = eanInput, nome = nomeInput.takeIf { it.isNotBlank() } ?: "PRODUTO SEM NOME", qtd = quant)
 
             withContext(Dispatchers.IO) {

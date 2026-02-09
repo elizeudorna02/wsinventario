@@ -9,17 +9,16 @@ class FileHandler {
     /**
      * Cria o conteúdo de texto para exportar uma lista de produtos no formato padrão.
      */
-    fun createExportContent(items: List<Produto>): String {
-        val header = "CODIGO;EAN;NOME;QTD\n"
+    fun createExportContent(items: List<Produto>, delimitador: String): String {
+        val header = "CODIGO${delimitador}EAN${delimitador}NOME${delimitador}QTD\n"
         val rows = items.joinToString(separator = "\n") { item ->
-            "${item.codigo};${item.ean};${item.nome};${item.qtd}"
+            "${item.codigo}${delimitador}${item.ean}${delimitador}${item.nome}${delimitador}${item.qtd}"
         }
         return header + rows
     }
 
     /**
-     * Lê um arquivo de importação de catálogo (com 2, 3 ou 4 colunas) 
-     * e o converte em uma lista de produtos no formato padrão.
+     * Lê um arquivo de importação no formato padrão e o converte em uma lista de produtos.
      */
     fun readProductsFromStream(inputStream: InputStream, delimitador: String): Result<List<Produto>> {
         return try {
@@ -27,35 +26,15 @@ class FileHandler {
             inputStream.bufferedReader().useLines { lines ->
                 lines.drop(1).forEach { line -> // Pula o cabeçalho
                     val tokens = line.split(delimitador)
-                    var produto: Produto? = null
-
-                    when (tokens.size) {
-                        2 -> { // EAN;QTD
-                            produto = Produto(
-                                codigo = 0, // Sem código no arquivo
-                                ean = tokens[0].trim(),
-                                nome = "", // Sem nome no arquivo
-                                qtd = tokens[1].trim().toDoubleOrNull() ?: 0.0
-                            )
-                        }
-                        3 -> { // EAN;NOME;QTD
-                            produto = Produto(
-                                codigo = 0, // Sem código no arquivo
-                                ean = tokens[0].trim(),
-                                nome = tokens[1].trim(),
-                                qtd = tokens[2].trim().toDoubleOrNull() ?: 0.0
-                            )
-                        }
-                        4 -> { // CODIGO;EAN;NOME;QTD
-                             produto = Produto(
-                                codigo = tokens[0].trim().toIntOrNull() ?: 0,
-                                ean = tokens[1].trim(),
-                                nome = tokens[2].trim(),
-                                qtd = tokens[3].trim().toDoubleOrNull() ?: 0.0
-                            )
-                        }
+                    if (tokens.size >= 4) {
+                         val produto = Produto(
+                            codigo = tokens[0].trim().toIntOrNull() ?: 0,
+                            ean = tokens[1].trim(),
+                            nome = tokens[2].trim(),
+                            qtd = tokens[3].trim().toDoubleOrNull() ?: 0.0
+                        )
+                        productList.add(produto)
                     }
-                    produto?.let { productList.add(it) }
                 }
             }
             Result.success(productList)

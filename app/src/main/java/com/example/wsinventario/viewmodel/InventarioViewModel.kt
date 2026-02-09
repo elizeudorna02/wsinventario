@@ -89,7 +89,10 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
                 _uiEvents.emit(UiEvent.ShowToast("Nenhuma contagem para exportar."))
                 return@launch
             }
-            val csvContent = fileHandler.createExportContent(itemsToExport)
+            val delimitador = withContext(Dispatchers.IO) {
+                repository.getParametro(SettingsViewModel.KEY_EXPORT_DELIMITADOR, ";")
+            }
+            val csvContent = fileHandler.createExportContent(itemsToExport, delimitador)
             _uiEvents.emit(UiEvent.SaveFile(csvContent, "contagem.csv"))
         }
     }

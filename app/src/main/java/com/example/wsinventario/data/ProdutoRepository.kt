@@ -2,7 +2,6 @@ package com.example.wsinventario.data
 
 import android.content.Context
 import com.example.wsinventario.data.file.FileHandler
-import com.example.wsinventario.settings.ApiSettingsViewModel
 import java.io.InputStream
 
 class ProdutoRepository(context: Context) {
@@ -11,19 +10,23 @@ class ProdutoRepository(context: Context) {
     private var apiService: ApiService
     private val fileHandler = FileHandler()
 
+    companion object {
+        const val KEY_API_URL = "api_url"
+    }
+
     init {
         apiService = createApiServiceFromSettings()
     }
 
     private fun createApiServiceFromSettings(): ApiService {
-        val apiUrl = dbHelper.getParametro(ApiSettingsViewModel.KEY_API_URL, "http://127.0.0.1:5000/api/produtos")
+        val apiUrl = dbHelper.getParametro(KEY_API_URL, "http://127.0.0.1:5000/api/produtos")
         return ApiService(apiUrl)
     }
 
-    // --- Funções de Catálogo (produtos) ---
+    // --- Catalog Functions (produtos table) ---
 
     suspend fun importarCatalogoDaApi(): Result<Int> {
-        apiService = createApiServiceFromSettings() // Garante que usa as configurações mais recentes
+        apiService = createApiServiceFromSettings() // Refresh service with latest settings
         val result = apiService.getProdutos()
         return result.fold(
             onSuccess = { produtosDaApi ->
@@ -63,7 +66,7 @@ class ProdutoRepository(context: Context) {
         return dbHelper.createProduto(produto)
     }
 
-    // --- Funções de Contagem ---
+    // --- Contagem Functions (contagem table) ---
 
     fun addOrUpdateContagem(produto: Produto): Long {
         return dbHelper.addOrUpdateContagem(produto)
@@ -73,7 +76,7 @@ class ProdutoRepository(context: Context) {
         return dbHelper.getAllContagens()
     }
 
-    // --- Funções de Parâmetros ---
+    // --- Parameter Functions ---
 
     fun getParametro(key: String, defaultValue: String): String {
         return dbHelper.getParametro(key, defaultValue)

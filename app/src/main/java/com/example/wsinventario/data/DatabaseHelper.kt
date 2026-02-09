@@ -9,7 +9,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_VERSION = 8 // Incremented for final schema standardization
-        private const val DATABASE_NAME = "EstoqueDatabase.db"
+        private const val DATABASE_NAME = "InventarioDatabase.db"
 
         // Standardized Column Names
         private const val COL_CODIGO = "codigo"
@@ -17,7 +17,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COL_NOME = "nome"
         private const val COL_QTD = "qtd"
 
-        // Correct Table Names
+        // Correct Table Names as requested
         private const val TABLE_PRODUTOS = "produtos"
         private const val TABLE_CONTAGEM = "contagem"
         private const val TABLE_PARAMETROS = "parametros"

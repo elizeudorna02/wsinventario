@@ -15,28 +15,36 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     var exportDelimiter by mutableStateOf("")
     var importDelimiter by mutableStateOf("")
+    var importFieldCount by mutableStateOf("")
 
     companion object {
         const val KEY_EXPORT_DELIMITADOR = "export_delimiter"
         const val KEY_IMPORT_DELIMITADOR = "import_delimiter"
+        const val KEY_IMPORT_FIELD_COUNT = "import_field_count"
     }
 
     init {
         exportDelimiter = repository.getParametro(KEY_EXPORT_DELIMITADOR, ";")
         importDelimiter = repository.getParametro(KEY_IMPORT_DELIMITADOR, ";")
+        importFieldCount = repository.getParametro(KEY_IMPORT_FIELD_COUNT, "3")
     }
 
-    fun onExportDelimiterChange(newDelimiter: String) {
+    fun onExportDelimiterChanged(newDelimiter: String) {
         exportDelimiter = newDelimiter
     }
 
-    fun onImportDelimiterChange(newDelimiter: String) {
+    fun onImportDelimiterChanged(newDelimiter: String) {
         importDelimiter = newDelimiter
+    }
+
+    fun onFieldCountChanged(newCount: String) {
+        importFieldCount = newCount
     }
 
     fun saveSettings() {
         repository.setParametro(KEY_EXPORT_DELIMITADOR, exportDelimiter)
         repository.setParametro(KEY_IMPORT_DELIMITADOR, importDelimiter)
+        repository.setParametro(KEY_IMPORT_FIELD_COUNT, importFieldCount)
     }
 }
 

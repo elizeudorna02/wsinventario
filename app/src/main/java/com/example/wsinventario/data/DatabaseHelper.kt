@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        private const val DATABASE_VERSION = 8 // Incremented for final schema standardization
+        private const val DATABASE_VERSION = 8
         private const val DATABASE_NAME = "InventarioDatabase.db"
 
         // Standardized Column Names
@@ -17,7 +17,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COL_NOME = "nome"
         private const val COL_QTD = "qtd"
 
-        // Correct Table Names as requested
+        // Table Names
         private const val TABLE_PRODUTOS = "produtos"
         private const val TABLE_CONTAGEM = "contagem"
         private const val TABLE_PARAMETROS = "parametros"
@@ -131,13 +131,26 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun addOrUpdateContagem(produto: Produto): Long {
         val db = this.writableDatabase
-        val values = ContentValues().apply {
-            put(COL_CODIGO, produto.codigo)
-            put(COL_EAN, produto.ean)
-            put(COL_NOME, produto.nome)
-            put(COL_QTD, produto.qtd)
+        var result: Long = -1
+        db.beginTransaction()
+        try {
+            val values = ContentValues().apply {
+                put(COL_CODIGO, produto.codigo)
+                put(COL_EAN, produto.ean)
+                put(COL_NOME, produto.nome)
+                put(COL_QTD, produto.qtd)
+            }
+            // Upsert into contagem table
+            db.insertWithOnConflict(TABLE_CONTAGEM, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+
+            // Upsert into produtos table
+            result = db.insertWithOnConflict(TABLE_PRODUTOS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
         }
-        return db.insertWithOnConflict(TABLE_CONTAGEM, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        return result
     }
     
     fun getAllContagens(): List<Produto> {

@@ -6,13 +6,19 @@ import java.io.OutputStream
 
 class FileHandler {
 
-    /**
-     * Cria o conteúdo de texto para exportar uma lista de produtos no formato padrão.
-     */
-    fun createExportContent(items: List<Produto>, delimitador: String): String {
-        val header = "CODIGO${delimitador}EAN${delimitador}NOME${delimitador}QTD\n"
+    fun createExportContent(items: List<Produto>, delimitador: String, fieldCount: Int): String {
+        val header = when (fieldCount) {
+            2 -> "EAN${delimitador}QTD\n"
+            3 -> "EAN${delimitador}NOME${delimitador}QTD\n"
+            else -> "CODIGO${delimitador}EAN${delimitador}NOME${delimitador}QTD\n"
+        }
+
         val rows = items.joinToString(separator = "\n") { item ->
-            "${item.codigo}${delimitador}${item.ean}${delimitador}${item.nome}${delimitador}${item.qtd}"
+            when (fieldCount) {
+                2 -> "${item.ean}${delimitador}${item.qtd}"
+                3 -> "${item.ean}${delimitador}${item.nome}${delimitador}${item.qtd}"
+                else -> "${item.codigo}${delimitador}${item.ean}${delimitador}${item.nome}${delimitador}${item.qtd}"
+            }
         }
         return header + rows
     }

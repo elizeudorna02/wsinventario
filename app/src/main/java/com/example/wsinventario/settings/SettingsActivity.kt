@@ -40,8 +40,6 @@ class SettingsActivity : ComponentActivity() {
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     val activity = (context as? Activity)
-    var expanded by remember { mutableStateOf(false) }
-    val fieldCountOptions = listOf("2", "3", "4")
     
     var showClearProdutosDialog by remember { mutableStateOf(false) }
     var showClearContagemDialog by remember { mutableStateOf(false) }
@@ -79,35 +77,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     singleLine = true
                 )
 
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    OutlinedTextField(
-                        value = viewModel.importFieldCount,
-                        onValueChange = {}, // Não é alterado diretamente pelo usuário
-                        readOnly = true,
-                        label = { Text("Campos na Importação") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .menuAnchor() // Conecta o campo ao menu
-                            .fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        fieldCountOptions.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    viewModel.onFieldCountChanged(selectionOption)
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                FieldCountDropdown(label = "Campos na Importação", selection = viewModel.importFieldCount, onSelectionChanged = viewModel::onFieldCountChanged)
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -126,6 +96,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                FieldCountDropdown(label = "Campos na Exportação", selection = viewModel.exportFieldCount, onSelectionChanged = viewModel::onExportFieldCountChanged)
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
@@ -198,6 +170,42 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 dialogText = "Todos os itens da sua contagem atual serão apagados. Esta ação não pode ser desfeita.",
                 icon = Icons.Outlined.Delete
             )
+        }
+    }
+}
+
+@Composable
+fun FieldCountDropdown(label: String, selection: String, onSelectionChanged: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = listOf("2", "3", "4")
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selection,
+            onValueChange = {}, // Não é alterado diretamente pelo usuário
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor() // Conecta o campo ao menu
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { selectionOption ->
+                DropdownMenuItem(
+                    text = { Text(selectionOption) },
+                    onClick = {
+                        onSelectionChanged(selectionOption)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

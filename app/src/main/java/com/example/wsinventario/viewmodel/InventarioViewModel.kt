@@ -105,7 +105,10 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
             val delimitador = withContext(Dispatchers.IO) {
                 repository.getParametro(SettingsViewModel.KEY_EXPORT_DELIMITADOR, ";")
             }
-            val csvContent = fileHandler.createExportContent(itemsToExport, delimitador)
+            val fieldCount = withContext(Dispatchers.IO) {
+                repository.getParametro(SettingsViewModel.KEY_EXPORT_FIELD_COUNT, "4").toIntOrNull() ?: 4
+            }
+            val csvContent = fileHandler.createExportContent(itemsToExport, delimitador, fieldCount)
             _uiEvents.emit(UiEvent.SaveFile(csvContent, "contagem.csv"))
         }
     }

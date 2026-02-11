@@ -482,7 +482,7 @@ fun CadastroSheetContent(
             OutlinedTextField(
                 value = viewModel.quantidadeInput,
                 onValueChange = viewModel::onQuantidadeChanged,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
                 textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center)
             )

@@ -25,7 +25,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     // State for the form
     var eanInput by mutableStateOf("")
     var nomeInput by mutableStateOf("")
-    var quantidadeInput by mutableStateOf("1.0")
+    var quantidadeInput by mutableStateOf("1") // Changed to integer
     var codigoInput by mutableStateOf("")
     var produtoOriginal by mutableStateOf<Produto?>(null)
 
@@ -61,18 +61,19 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onQuantidadeChanged(text: String) {
-        if (text.isEmpty() || text.matches(Regex("^\\d*\\.?\\d*$"))) {
+        // Allow only digits or an empty string
+        if (text.isEmpty() || text.all { it.isDigit() }) {
             quantidadeInput = text
         }
     }
 
     fun incrementQuantidade() {
-        val currentQuant = quantidadeInput.toDoubleOrNull() ?: 0.0
+        val currentQuant = quantidadeInput.toIntOrNull() ?: 0
         quantidadeInput = (currentQuant + 1).toString()
     }
 
     fun decrementQuantidade() {
-        val currentQuant = quantidadeInput.toDoubleOrNull() ?: 1.0
+        val currentQuant = quantidadeInput.toIntOrNull() ?: 1
         if (currentQuant > 0) {
             quantidadeInput = (currentQuant - 1).toString()
         }
@@ -82,7 +83,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
         produtoOriginal = null
         eanInput = ""
         nomeInput = ""
-        quantidadeInput = "1.0"
+        quantidadeInput = "1"
         codigoInput = ""
     }
 
@@ -90,7 +91,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
         produtoOriginal = produto
         eanInput = produto.ean
         nomeInput = produto.nome
-        quantidadeInput = produto.qtd.toString()
+        quantidadeInput = produto.qtd.toInt().toString() // Display as integer
         codigoInput = produto.codigo.toString()
     }
 

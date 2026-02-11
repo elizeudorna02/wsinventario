@@ -25,7 +25,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     // State for the form
     var eanInput by mutableStateOf("")
     var nomeInput by mutableStateOf("")
-    var quantidadeInput by mutableStateOf("1") // Changed to integer
+    var quantidadeInput by mutableStateOf("1")
     var codigoInput by mutableStateOf("")
     var produtoOriginal by mutableStateOf<Produto?>(null)
 
@@ -44,9 +44,20 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
                     val productFromRepo = withContext(Dispatchers.IO) {
                         repository.findProdutoByEan(text)
                     }
-                    produtoOriginal = productFromRepo
-                    nomeInput = productFromRepo?.nome ?: ""
-                    codigoInput = productFromRepo?.codigo?.toString() ?: ""
+                    if (productFromRepo != null) {
+                        produtoOriginal = productFromRepo
+                        nomeInput = productFromRepo.nome
+                        codigoInput = productFromRepo.codigo.toString()
+                    } else {
+                        _uiEvents.emit(UiEvent.ShowToast("Produto não cadastrado"))
+                        nomeInput = ""
+                        codigoInput = ""
+                        produtoOriginal = null
+                    }
+                } else {
+                    nomeInput = ""
+                    codigoInput = ""
+                    produtoOriginal = null
                 }
             }
         }
@@ -61,8 +72,8 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onQuantidadeChanged(text: String) {
-        // Allow only digits or an empty string
-        if (text.isEmpty() || text.all { it.isDigit() }) {
+        // Allow empty, a single negative sign, or a valid integer string
+        if (text.isEmpty() || text == "-" || text.toIntOrNull() != null) {
             quantidadeInput = text
         }
     }
@@ -73,10 +84,8 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun decrementQuantidade() {
-        val currentQuant = quantidadeInput.toIntOrNull() ?: 1
-        if (currentQuant > 0) {
-            quantidadeInput = (currentQuant - 1).toString()
-        }
+        val currentQuant = quantidadeInput.toIntOrNull() ?: 0
+        quantidadeInput = (currentQuant - 1).toString()
     }
 
     fun clearForm() {
@@ -91,7 +100,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
         produtoOriginal = produto
         eanInput = produto.ean
         nomeInput = produto.nome
-        quantidadeInput = produto.qtd.toInt().toString() // Display as integer
+        quantidadeInput = produto.qtd.toInt().toString()
         codigoInput = produto.codigo.toString()
     }
 
@@ -101,8 +110,8 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
             onFailure("O código EAN é obrigatório.")
             return
         }
-        if (quant == null || quant < 0) {
-            onFailure("A quantidade não pode ser negativa.")
+        if (quant == null) {
+            onFailure("A quantidade é inválida.")
             return
         }
 

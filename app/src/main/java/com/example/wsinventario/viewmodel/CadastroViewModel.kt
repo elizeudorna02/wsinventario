@@ -72,20 +72,29 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onQuantidadeChanged(text: String) {
-        // Allow empty, a single negative sign, or a valid integer string
+        // Allow empty, a single negative sign, or a valid integer string up to 7 digits
         if (text.isEmpty() || text == "-" || text.toIntOrNull() != null) {
-            quantidadeInput = text
+            val digits = text.filter { it.isDigit() }
+            if (digits.length <= 7) {
+                quantidadeInput = text
+            }
         }
     }
 
     fun incrementQuantidade() {
         val currentQuant = quantidadeInput.toIntOrNull() ?: 0
-        quantidadeInput = (currentQuant + 1).toString()
+        val newQuantString = (currentQuant + 1).toString()
+        if (newQuantString.filter { it.isDigit() }.length <= 7) {
+            quantidadeInput = newQuantString
+        }
     }
 
     fun decrementQuantidade() {
         val currentQuant = quantidadeInput.toIntOrNull() ?: 0
-        quantidadeInput = (currentQuant - 1).toString()
+        val newQuantString = (currentQuant - 1).toString()
+        if (newQuantString.filter { it.isDigit() }.length <= 7) {
+            quantidadeInput = newQuantString
+        }
     }
 
     fun clearForm() {

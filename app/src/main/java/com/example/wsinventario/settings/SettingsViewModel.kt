@@ -20,12 +20,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var importDelimiter by mutableStateOf("")
     var importFieldCount by mutableStateOf("")
     var exportFieldCount by mutableStateOf("")
+    var exportWithoutDelimiter by mutableStateOf(false)
 
     companion object {
         const val KEY_EXPORT_DELIMITADOR = "export_delimiter"
         const val KEY_IMPORT_DELIMITADOR = "import_delimiter"
         const val KEY_IMPORT_FIELD_COUNT = "import_field_count"
         const val KEY_EXPORT_FIELD_COUNT = "export_field_count"
+        const val KEY_EXPORT_NO_DELIMITER = "export_no_delimiter"
     }
 
     init {
@@ -33,6 +35,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         importDelimiter = repository.getParametro(KEY_IMPORT_DELIMITADOR, ";")
         importFieldCount = repository.getParametro(KEY_IMPORT_FIELD_COUNT, "4")
         exportFieldCount = repository.getParametro(KEY_EXPORT_FIELD_COUNT, "4")
+        exportWithoutDelimiter = repository.getParametro(KEY_EXPORT_NO_DELIMITER, "false").toBoolean()
     }
 
     fun onExportDelimiterChanged(newDelimiter: String) {
@@ -50,12 +53,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun onExportFieldCountChanged(newCount: String) {
         exportFieldCount = newCount
     }
+    
+    fun onExportWithoutDelimiterChanged(isChecked: Boolean) {
+        exportWithoutDelimiter = isChecked
+    }
 
     fun saveSettings() {
         repository.setParametro(KEY_EXPORT_DELIMITADOR, exportDelimiter)
         repository.setParametro(KEY_IMPORT_DELIMITADOR, importDelimiter)
         repository.setParametro(KEY_IMPORT_FIELD_COUNT, importFieldCount)
         repository.setParametro(KEY_EXPORT_FIELD_COUNT, exportFieldCount)
+        repository.setParametro(KEY_EXPORT_NO_DELIMITER, exportWithoutDelimiter.toString())
     }
 
     fun clearProdutosTable() {

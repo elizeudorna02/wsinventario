@@ -78,7 +78,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 )
 
                 FieldCountDropdown(label = "Campos na Importação", selection = viewModel.importFieldCount, onSelectionChanged = viewModel::onFieldCountChanged)
-
+                
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // --- Grupo de Exportação ---
@@ -89,12 +89,21 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = viewModel.exportWithoutDelimiter,
+                        onCheckedChange = viewModel::onExportWithoutDelimiterChanged
+                    )
+                    Text("Exportar sem delimitador")
+                }
+
                 OutlinedTextField(
                     value = viewModel.exportDelimiter,
                     onValueChange = viewModel::onExportDelimiterChanged,
                     label = { Text("Delimitador de Arquivo de Exportação") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !viewModel.exportWithoutDelimiter // Disable if checkbox is checked
                 )
 
                 FieldCountDropdown(label = "Campos na Exportação", selection = viewModel.exportFieldCount, onSelectionChanged = viewModel::onExportFieldCountChanged)

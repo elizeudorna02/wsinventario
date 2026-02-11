@@ -3,21 +3,34 @@ package com.example.wsinventario.data.file
 import com.example.wsinventario.data.Produto
 import java.io.InputStream
 import java.io.OutputStream
+import kotlin.math.abs
 
 class FileHandler {
 
     fun createExportContent(items: List<Produto>, delimitador: String, fieldCount: Int): String {
-        val header = when (fieldCount) {
-            2 -> "EAN${delimitador}QTD\n"
-            3 -> "EAN${delimitador}NOME${delimitador}QTD\n"
-            else -> "CODIGO${delimitador}EAN${delimitador}NOME${delimitador}QTD\n"
+        val header = if (delimitador.isNotEmpty()) {
+            when (fieldCount) {
+                2 -> "EAN${delimitador}QTD\n"
+                3 -> "EAN${delimitador}NOME${delimitador}QTD\n"
+                else -> "CODIGO${delimitador}EAN${delimitador}NOME${delimitador}QTD\n"
+            }
+        } else {
+            "" // No header if no delimiter
         }
 
         val rows = items.joinToString(separator = "\n") { item ->
+            val qtyInt = item.qtd.toInt()
+            val isNegative = qtyInt < 0
+            val formattedQty = if (isNegative) {
+                "-" + abs(qtyInt).toString().padStart(7, '0')
+            } else {
+                qtyInt.toString().padStart(7, '0')
+            }
+
             when (fieldCount) {
-                2 -> "${item.ean}${delimitador}${item.qtd}"
-                3 -> "${item.ean}${delimitador}${item.nome}${delimitador}${item.qtd}"
-                else -> "${item.codigo}${delimitador}${item.ean}${delimitador}${item.nome}${delimitador}${item.qtd}"
+                2 -> "${item.ean}${delimitador}${formattedQty}"
+                3 -> "${item.ean}${delimitador}${item.nome}${delimitador}${formattedQty}"
+                else -> "${item.codigo}${delimitador}${item.ean}${delimitador}${item.nome}${delimitador}${formattedQty}"
             }
         }
         return header + rows

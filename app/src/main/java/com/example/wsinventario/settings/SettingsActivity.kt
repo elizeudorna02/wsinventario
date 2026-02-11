@@ -10,10 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +42,9 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val activity = (context as? Activity)
     var expanded by remember { mutableStateOf(false) }
     val fieldCountOptions = listOf("2", "3", "4")
+    
+    var showClearProdutosDialog by remember { mutableStateOf(false) }
+    var showClearContagemDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -120,6 +126,33 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                // --- Ações Perigosas ---
+                Text(
+                    text = "Manutenção de Dados",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+                
+                OutlinedButton(
+                    onClick = { showClearProdutosDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("LIMPAR CATÁLOGO DE PRODUTOS")
+                }
+                
+                OutlinedButton(
+                    onClick = { showClearContagemDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("LIMPAR CONTAGEM ATUAL")
+                }
+
             }
 
             // Botão Salvar
@@ -137,5 +170,76 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Text("SALVAR")
             }
         }
+        
+        // Dialogs de Confirmação
+        if (showClearProdutosDialog) {
+            ConfirmationDialog(
+                onDismissRequest = { showClearProdutosDialog = false },
+                onConfirmation = { 
+                    viewModel.clearProdutosTable()
+                    showClearProdutosDialog = false 
+                    Toast.makeText(context, "Catálogo de produtos limpo!", Toast.LENGTH_SHORT).show()
+                },
+                dialogTitle = "Limpar Catálogo?",
+                dialogText = "Todos os produtos do seu catálogo local serão apagados. Esta ação não pode ser desfeita.",
+                icon = Icons.Outlined.Delete
+            )
+        }
+
+        if (showClearContagemDialog) {
+            ConfirmationDialog(
+                onDismissRequest = { showClearContagemDialog = false },
+                onConfirmation = { 
+                    viewModel.clearContagemTable()
+                    showClearContagemDialog = false 
+                    Toast.makeText(context, "Contagem limpa!", Toast.LENGTH_SHORT).show()
+                 },
+                dialogTitle = "Limpar Contagem?",
+                dialogText = "Todos os itens da sua contagem atual serão apagados. Esta ação não pode ser desfeita.",
+                icon = Icons.Outlined.Delete
+            )
+        }
     }
+}
+
+@Composable
+fun ConfirmationDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    dialogTitle: String,
+    dialogText: String,
+    icon: ImageVector
+) {
+    AlertDialog(
+        icon = {
+            Icon(icon, contentDescription = null)
+        },
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            Text(text = dialogText)
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }
+            ) {
+                Text("Confirmar")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

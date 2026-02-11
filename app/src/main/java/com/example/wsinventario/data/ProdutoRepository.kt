@@ -23,6 +23,15 @@ class ProdutoRepository(context: Context) {
         return ApiService(apiUrl)
     }
 
+    // --- Data Cleaning Functions ---
+    fun clearProdutosTable() {
+        dbHelper.clearProdutosTable()
+    }
+
+    fun clearContagemTable() {
+        dbHelper.clearContagemTable()
+    }
+
     // --- Catalog Functions (produtos table) ---
 
     suspend fun importarCatalogoDaApi(): Result<Int> {

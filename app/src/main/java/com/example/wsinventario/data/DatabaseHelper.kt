@@ -57,6 +57,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         onCreate(db)
     }
 
+    // --- Data Cleaning Functions ---
+    fun clearProdutosTable() {
+        val db = this.writableDatabase
+        db.delete(TABLE_PRODUTOS, null, null)
+    }
+
+    fun clearContagemTable() {
+        val db = this.writableDatabase
+        db.delete(TABLE_CONTAGEM, null, null)
+    }
+
     // --- Product Table Functions ---
 
     fun createProduto(produto: Produto): Long {

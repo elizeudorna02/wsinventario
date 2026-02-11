@@ -7,7 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.wsinventario.data.ProdutoRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -45,6 +48,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         repository.setParametro(KEY_EXPORT_DELIMITADOR, exportDelimiter)
         repository.setParametro(KEY_IMPORT_DELIMITADOR, importDelimiter)
         repository.setParametro(KEY_IMPORT_FIELD_COUNT, importFieldCount)
+    }
+
+    fun clearProdutosTable() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearProdutosTable()
+        }
+    }
+
+    fun clearContagemTable() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearContagemTable()
+        }
     }
 }
 

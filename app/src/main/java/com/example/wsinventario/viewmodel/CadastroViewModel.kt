@@ -116,8 +116,8 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun createProdutoNoCatalogo(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
-        if (eanInput.isBlank() || nomeInput.isBlank() || codigoInput.isBlank()) {
-            onFailure("Código, EAN e Nome são obrigatórios.")
+        if (eanInput.isBlank() || nomeInput.isBlank()) {
+            onFailure("EAN e Nome são obrigatórios.")
             return
         }
 
@@ -130,7 +130,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
                 return@launch
             }
 
-            val newProduto = Produto(codigo = codigoInput.toIntOrNull() ?: 0, ean = eanInput, nome = nomeInput, qtd = 0.0) // qtd inicial é 0 no catálogo
+            val newProduto = Produto(codigo = codigoInput.toIntOrNull() ?: 0, ean = eanInput, nome = nomeInput, qtd = 0.0)
             val result = withContext(Dispatchers.IO) {
                 repository.createProduto(newProduto)
             }

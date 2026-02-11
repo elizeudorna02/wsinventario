@@ -82,6 +82,11 @@ class MainActivity : ComponentActivity() {
                 ) { result ->
                     if (result.resultCode == Activity.RESULT_OK) {
                         inventarioViewModel.refreshData()
+                    } else if (result.resultCode == NovoProdutoActivity.RESULT_START_CONTAGEM) {
+                        val ean = result.data?.getStringExtra(NovoProdutoActivity.EXTRA_EAN)
+                        if (ean != null) {
+                            inventarioViewModel.findAndStartContagem(ean)
+                        }
                     }
                 }
 
@@ -150,6 +155,10 @@ class MainActivity : ComponentActivity() {
                                 contentToSave = it.content
                                 createFileLauncher.launch(it.fileName)
                             }
+                            is InventarioViewModel.UiEvent.StartContagemForProduct -> {
+                                cadastroViewModel.loadProdutoParaContagem(it.product)
+                                showCadastroSheet = true
+                            }
                         }
                     }
                 }
@@ -159,6 +168,12 @@ class MainActivity : ComponentActivity() {
                         when (it) {
                             is CadastroViewModel.UiEvent.ShowToast -> {
                                 Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                            }
+                             is CadastroViewModel.UiEvent.ShowProductExistsDialog -> { 
+                                // This is handled in NovoProdutoActivity
+                            }
+                            is CadastroViewModel.UiEvent.CadastroSuccess -> {
+                                // This is handled in NovoProdutoActivity
                             }
                         }
                     }

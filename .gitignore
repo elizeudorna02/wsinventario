@@ -1,15 +1,60 @@
+# =========================
+# Android Studio / IntelliJ
+# =========================
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.idea/
+.gradle/
+.kotlin/
+
+# =========================
+# Arquivos locais (NÃO subir)
+# =========================
 local.properties
+
+# =========================
+# Build
+# =========================
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Sistema Operacional
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Keystore (NÃO subir chave de assinatura)
+# =========================
+*.jks
+*.keystore
+
+# =========================
+# Arquivos temporários
+# =========================
+*.tmp
+*.bak
+*.swp
+
+# =========================
+# Firebase / Google Services (se gerar local)
+# =========================
+google-services.json
+
+# =========================
+# NDK
+# =========================
+obj/
+
+# =========================
+# Mac
+# =========================
+*.xcworkspace

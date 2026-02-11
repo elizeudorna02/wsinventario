@@ -35,17 +35,19 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     val uiEvents = _uiEvents.asSharedFlow()
 
     fun onEanChanged(text: String) {
-        eanInput = text
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            delay(300L) // Debounce
-            if (text.isNotBlank()) {
-                val productFromRepo = withContext(Dispatchers.IO) {
-                    repository.findProdutoByEan(text)
+        if (text.length <= 14) {
+            eanInput = text
+            searchJob?.cancel()
+            searchJob = viewModelScope.launch {
+                delay(300L) // Debounce
+                if (text.isNotBlank()) {
+                    val productFromRepo = withContext(Dispatchers.IO) {
+                        repository.findProdutoByEan(text)
+                    }
+                    produtoOriginal = productFromRepo
+                    nomeInput = productFromRepo?.nome ?: ""
+                    codigoInput = productFromRepo?.codigo?.toString() ?: ""
                 }
-                produtoOriginal = productFromRepo
-                nomeInput = productFromRepo?.nome ?: ""
-                codigoInput = productFromRepo?.codigo?.toString() ?: ""
             }
         }
     }
@@ -115,9 +117,9 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun createProdutoNoCatalogo(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+    fun submitNewProduto() {
         if (eanInput.isBlank() || nomeInput.isBlank()) {
-            onFailure("EAN e Nome são obrigatórios.")
+            viewModelScope.launch { _uiEvents.emit(UiEvent.ShowToast("EAN e Nome são obrigatórios.")) }
             return
         }
 
@@ -126,7 +128,7 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
                 repository.findProdutoByEan(eanInput)
             }
             if (existingProduct != null) {
-                onFailure("Um produto com este EAN já existe no catálogo.")
+                _uiEvents.emit(UiEvent.ShowProductExistsDialog(existingProduct))
                 return@launch
             }
 
@@ -136,15 +138,17 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
             }
 
             if (result > -1) {
-                onSuccess()
+                _uiEvents.emit(UiEvent.CadastroSuccess)
             } else {
-                onFailure("Erro ao criar o produto.")
+                _uiEvents.emit(UiEvent.ShowToast("Erro ao criar o produto."))
             }
         }
     }
     
     sealed class UiEvent {
         data class ShowToast(val message: String) : UiEvent()
+        data class ShowProductExistsDialog(val product: Produto) : UiEvent()
+        object CadastroSuccess : UiEvent()
     }
 }
 

@@ -82,6 +82,19 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
         selectedProduct = null
     }
 
+    fun findAndStartContagem(ean: String) {
+        viewModelScope.launch {
+            val product = withContext(Dispatchers.IO) {
+                repository.findProdutoByEan(ean)
+            }
+            if (product != null) {
+                _uiEvents.emit(UiEvent.StartContagemForProduct(product))
+            } else {
+                _uiEvents.emit(UiEvent.ShowToast("Produto com EAN $ean não encontrado."))
+            }
+        }
+    }
+
     fun onExportClicked() {
         viewModelScope.launch {
             val itemsToExport = withContext(Dispatchers.IO) { repository.getAllContagens() }
@@ -141,6 +154,7 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
     sealed class UiEvent {
         data class ShowToast(val message: String) : UiEvent()
         data class SaveFile(val content: String, val fileName: String) : UiEvent()
+        data class StartContagemForProduct(val product: Produto) : UiEvent()
     }
 }
 

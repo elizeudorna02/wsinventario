@@ -21,6 +21,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var importFieldCount by mutableStateOf("")
     var exportFieldCount by mutableStateOf("")
     var exportWithoutDelimiter by mutableStateOf(false)
+    var exportWithHeader by mutableStateOf(true)
 
     companion object {
         const val KEY_EXPORT_DELIMITADOR = "export_delimiter"
@@ -28,6 +29,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         const val KEY_IMPORT_FIELD_COUNT = "import_field_count"
         const val KEY_EXPORT_FIELD_COUNT = "export_field_count"
         const val KEY_EXPORT_NO_DELIMITER = "export_no_delimiter"
+        const val KEY_EXPORT_WITH_HEADER = "export_with_header"
     }
 
     init {
@@ -36,6 +38,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         importFieldCount = repository.getParametro(KEY_IMPORT_FIELD_COUNT, "4")
         exportFieldCount = repository.getParametro(KEY_EXPORT_FIELD_COUNT, "4")
         exportWithoutDelimiter = repository.getParametro(KEY_EXPORT_NO_DELIMITER, "false").toBoolean()
+        exportWithHeader = repository.getParametro(KEY_EXPORT_WITH_HEADER, "true").toBoolean()
     }
 
     fun onExportDelimiterChanged(newDelimiter: String) {
@@ -58,12 +61,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         exportWithoutDelimiter = isChecked
     }
 
+    fun onExportWithHeaderChanged(isChecked: Boolean) {
+        exportWithHeader = isChecked
+    }
+
     fun saveSettings() {
         repository.setParametro(KEY_EXPORT_DELIMITADOR, exportDelimiter)
         repository.setParametro(KEY_IMPORT_DELIMITADOR, importDelimiter)
         repository.setParametro(KEY_IMPORT_FIELD_COUNT, importFieldCount)
         repository.setParametro(KEY_EXPORT_FIELD_COUNT, exportFieldCount)
         repository.setParametro(KEY_EXPORT_NO_DELIMITER, exportWithoutDelimiter.toString())
+        repository.setParametro(KEY_EXPORT_WITH_HEADER, exportWithHeader.toString())
     }
 
     fun clearProdutosTable() {

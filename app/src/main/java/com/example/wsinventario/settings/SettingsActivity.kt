@@ -91,6 +91,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
+                        checked = viewModel.exportWithHeader,
+                        onCheckedChange = viewModel::onExportWithHeaderChanged
+                    )
+                    Text("Incluir cabeçalho na exportação")
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
                         checked = viewModel.exportWithoutDelimiter,
                         onCheckedChange = viewModel::onExportWithoutDelimiterChanged
                     )

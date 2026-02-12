@@ -7,15 +7,15 @@ import kotlin.math.abs
 
 class FileHandler {
 
-    fun createExportContent(items: List<Produto>, delimitador: String, fieldCount: Int): String {
-        val header = if (delimitador.isNotEmpty()) {
+    fun createExportContent(items: List<Produto>, delimitador: String, fieldCount: Int, includeHeader: Boolean): String {
+        val header = if (includeHeader) {
             when (fieldCount) {
                 2 -> "EAN${delimitador}QTD\n"
                 3 -> "EAN${delimitador}NOME${delimitador}QTD\n"
                 else -> "CODIGO${delimitador}EAN${delimitador}NOME${delimitador}QTD\n"
             }
         } else {
-            "" // No header if no delimiter
+            ""
         }
 
         val rows = items.joinToString(separator = "\n") { item ->

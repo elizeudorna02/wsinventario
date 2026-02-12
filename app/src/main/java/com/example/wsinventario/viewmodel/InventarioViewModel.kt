@@ -106,6 +106,10 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
             val exportWithoutDelimiter = withContext(Dispatchers.IO) {
                 repository.getParametro(SettingsViewModel.KEY_EXPORT_NO_DELIMITER, "false").toBoolean()
             }
+
+            val includeHeader = withContext(Dispatchers.IO) {
+                repository.getParametro(SettingsViewModel.KEY_EXPORT_WITH_HEADER, "true").toBoolean()
+            }
             
             val delimitador = if (exportWithoutDelimiter) {
                 ""
@@ -118,8 +122,8 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
             val fieldCount = withContext(Dispatchers.IO) {
                 repository.getParametro(SettingsViewModel.KEY_EXPORT_FIELD_COUNT, "4").toIntOrNull() ?: 4
             }
-
-            val csvContent = fileHandler.createExportContent(itemsToExport, delimitador, fieldCount)
+            
+            val csvContent = fileHandler.createExportContent(itemsToExport, delimitador, fieldCount, includeHeader)
             _uiEvents.emit(UiEvent.SaveFile(csvContent, "contagem.csv"))
         }
     }

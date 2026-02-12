@@ -32,6 +32,10 @@ class ProdutoRepository(context: Context) {
         dbHelper.clearContagemTable()
     }
 
+    fun deleteContagemByEan(ean: String): Int {
+       return dbHelper.deleteContagemByEan(ean)
+    }
+
     // --- Catalog Functions (produtos table) ---
 
     suspend fun importarCatalogoDaApi(): Result<Int> {

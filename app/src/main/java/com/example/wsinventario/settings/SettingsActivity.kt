@@ -89,7 +89,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = viewModel.exportWithHeader,
                         onCheckedChange = viewModel::onExportWithHeaderChanged

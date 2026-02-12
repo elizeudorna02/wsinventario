@@ -72,7 +72,6 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onQuantidadeChanged(text: String) {
-        // Allow empty, a single negative sign, or a valid integer string up to 7 digits
         if (text.isEmpty() || text == "-" || text.toIntOrNull() != null) {
             val digits = text.filter { it.isDigit() }
             if (digits.length <= 7) {
@@ -111,6 +110,21 @@ class CadastroViewModel(application: Application) : AndroidViewModel(application
         nomeInput = produto.nome
         quantidadeInput = produto.qtd.toInt().toString()
         codigoInput = produto.codigo.toString()
+    }
+
+    fun onDeleteContagemClicked(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val productToDelete = produtoOriginal
+        if (productToDelete == null) {
+            onFailure("Nenhum produto selecionado para excluir.")
+            return
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.deleteContagemByEan(productToDelete.ean)
+            }
+            onSuccess()
+        }
     }
 
     fun onSaveContagemClicked(onSuccess: () -> Unit, onFailure: (String) -> Unit) {

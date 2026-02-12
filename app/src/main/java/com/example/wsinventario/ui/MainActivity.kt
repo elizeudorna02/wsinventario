@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -31,12 +32,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.wsinventario.data.Produto
@@ -141,7 +145,6 @@ class MainActivity : ComponentActivity() {
                             showCadastroSheet = false
                         }
                         inventarioViewModel.onProductSaveSuccess()
-                        Toast.makeText(context, "Operação bem-sucedida!", Toast.LENGTH_SHORT).show()
                     }
                 }
 
@@ -232,7 +235,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onSave = {
-                                cadastroViewModel.onSaveContagemClicked(onSuccess = onSaveSuccess, onFailure = { error ->
+                                cadastroViewModel.onSaveContagemClicked(onSuccess = {
+                                    onSaveSuccess()
+                                    Toast.makeText(context, "Contagem salva!", Toast.LENGTH_SHORT).show()
+                                }, onFailure = { error ->
+                                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                })
+                            },
+                            onDelete = {
+                                cadastroViewModel.onDeleteContagemClicked(onSuccess = {
+                                     onSaveSuccess()
+                                     Toast.makeText(context, "Contagem excluída!", Toast.LENGTH_SHORT).show()
+                                }, onFailure = { error ->
                                     Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                                 })
                             }
@@ -349,7 +363,7 @@ fun InventarioScreen(
 
             PrimaryTabRow(selectedTabIndex = viewModel.selectedTabIndex) {
                 Tab(selected = viewModel.selectedTabIndex == 0, onClick = { viewModel.onTabSelected(0) }, text = { Text("CONTAGEM") })
-                Tab(selected = viewModel.selectedTabIndex == 1, onClick = { viewModel.onTabSelected(1) }, text = { Text("PRODUTOS") })
+                Tab(selected = viewModel.selectedTabIndex == 1, onClick = { viewModel.onTabSelected(1) }, text = { Text("CATÁLOGO") })
             }
 
             val contagemProductsCount = viewModel.contagemList.distinctBy { it.ean }.size
@@ -370,14 +384,13 @@ fun ContagensTab(
     contagemList: List<Produto>,
     onContagemClick: (Produto) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(modifier = Modifier.padding(16.dp)) {
                 InfoColumn(title = "PRODUTOS", value = productsCount.toString(), modifier = Modifier.weight(1f))
-                InfoColumn(title = "QUANTIDADE TOTAL", value = String.format("%.2f", totalQuantity), modifier = Modifier.weight(1f))
+                InfoColumn(title = "QUANTIDADE TOTAL", value = totalQuantity.toInt().toString(), modifier = Modifier.weight(1f))
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
 
         if (contagemList.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -387,16 +400,9 @@ fun ContagensTab(
                 }
             }
         } else {
-            LazyColumn {
+            LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp)) {
                 items(contagemList) { produto ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onContagemClick(produto) }.padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(text = "${produto.codigo}", modifier = Modifier.weight(0.5f))
-                        Text(text = produto.ean, modifier = Modifier.weight(1f))
-                        Text(text = produto.nome, modifier = Modifier.weight(1f))
-                        Text(text = String.format("%.2f", produto.qtd), modifier = Modifier.weight(0.5f), textAlign = TextAlign.End)
-                    }
+                    ProductListItem(produto = produto, modifier = Modifier.clickable { onContagemClick(produto) })
                     HorizontalDivider()
                 }
             }
@@ -414,20 +420,59 @@ fun ProdutosTab(
             Text("Nenhum produto no catálogo. Importe os dados via API ou arquivo.", textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
         }
     } else {
-        LazyColumn(modifier = Modifier.padding(16.dp)) {
+        LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp)) {
             items(productList) { product ->
-                Row(
-                    modifier = Modifier.padding(8.dp).clickable { onProductClick(product) }
-                ) {
-                    Text(text = "${product.codigo}", modifier = Modifier.weight(0.5f))
-                    Text(text = product.ean, modifier = Modifier.weight(1f))
-                    Text(text = product.nome, modifier = Modifier.weight(1f))
-                    Text(text = String.format("%.2f", product.qtd), modifier = Modifier.weight(0.5f), textAlign = TextAlign.End)
-                }
+                ProductListItem(produto = product, modifier = Modifier.clickable { onProductClick(product) })
+                HorizontalDivider()
             }
         }
     }
 }
+
+@Composable
+fun ProductListItem(produto: Produto, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = produto.ean,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "(Cód: ${produto.codigo})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = produto.nome,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = produto.qtd.toInt().toString(),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
 
 @Composable
 fun InfoColumn(title: String, value: String, modifier: Modifier = Modifier) {
@@ -441,8 +486,34 @@ fun InfoColumn(title: String, value: String, modifier: Modifier = Modifier) {
 fun CadastroSheetContent(
     viewModel: CadastroViewModel,
     onCancel: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Excluir Contagem?") },
+            text = { Text("Tem certeza que deseja remover este item da contagem? Esta ação não pode ser desfeita.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier.padding(16.dp).navigationBarsPadding().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -492,10 +563,27 @@ fun CadastroSheetContent(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onCancel) { Text("CANCELAR") }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = onSave) { Text("SALVAR") }
+        Row(
+            modifier = Modifier.fillMaxWidth(), 
+            horizontalArrangement = Arrangement.SpaceBetween, 
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (viewModel.produtoOriginal != null) {
+                OutlinedButton(
+                    onClick = { showDeleteDialog = true },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(Icons.Outlined.Delete, contentDescription = "Excluir")
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f, fill=false)) // Empty spacer to keep alignment
+            }
+            
+            Row {
+                TextButton(onClick = onCancel) { Text("CANCELAR") }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = onSave) { Text("SALVAR") }
+            }
         }
     }
 }
@@ -532,7 +620,18 @@ fun CadastroSheetContentPreview() {
         CadastroSheetContent(
             viewModel = viewModel(factory = CadastroViewModelFactory(Application())),
             onCancel = {}, 
-            onSave = {}
+            onSave = {},
+            onDelete = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ProductListItemPreview() {
+    WsinventarioTheme {
+        ProductListItem(
+            produto = Produto(codigo = 123, ean = "7891234567890", nome = "PRODUTO DE EXEMPLO COM UM NOME MUITO LONGO PARA TESTAR A QUEBRA DE LINHA", qtd = 12.0)
         )
     }
 }

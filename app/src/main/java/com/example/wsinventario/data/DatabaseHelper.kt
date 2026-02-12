@@ -68,6 +68,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         db.delete(TABLE_CONTAGEM, null, null)
     }
 
+    fun deleteContagemByEan(ean: String): Int {
+        val db = this.writableDatabase
+        return db.delete(TABLE_CONTAGEM, "$COL_EAN = ?", arrayOf(ean))
+    }
+
     // --- Product Table Functions ---
 
     fun createProduto(produto: Produto): Long {

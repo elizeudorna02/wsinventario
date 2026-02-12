@@ -124,7 +124,7 @@ class InventarioViewModel(application: Application) : AndroidViewModel(applicati
             }
             
             val csvContent = fileHandler.createExportContent(itemsToExport, delimitador, fieldCount, includeHeader)
-            _uiEvents.emit(UiEvent.SaveFile(csvContent, "contagem.csv"))
+            _uiEvents.emit(UiEvent.SaveFile(csvContent, "contagem.txt"))
         }
     }
 
